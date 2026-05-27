@@ -13,7 +13,7 @@ All releases: [Releases](https://github.com/Optaro/vm-endpoint/releases)
 ## Requirements
 
 - Any QEMU/KVM-compatible hypervisor (ESXi, Proxmox, libvirt, Hyper-V)
-- 512 MB RAM, 2 vCPUs, ~3 GB disk
+- 512 MB RAM, 2 vCPUs, ~4 GB disk
 - Two NICs: one WAN (NAT/DHCP), one 802.1Q trunk
 
 ## Quick start
@@ -73,6 +73,12 @@ Create a VM with two NICs and inject the host MAC via SMBIOS:
 The agent defaults to `https://sensor.optaro.io`. Override via:
 - Environment variable: `HUGINN_VM_ENDPOINT_API_URL`
 - Kernel cmdline: `huginn.api_url=https://your-server.example.com`
+
+## OTA updates
+
+v0.3.0+ images support over-the-air updates. The disk has an A/B root partition layout — updates write to the standby slot and reboot. If the new image fails to connect back to the platform within 5 minutes, GRUB automatically falls back to the previous working image. No manual intervention required.
+
+Updates are triggered server-side via the heartbeat channel and rolled out in canary phases across the fleet.
 
 ## License
 
