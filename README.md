@@ -1,36 +1,36 @@
 # Huginn VM Endpoint
 
-Debian 12 raw QEMU disk image that acts as a remote network scanner
-endpoint. Drop it onto any hypervisor (ESXi, Proxmox, KVM, Hyper-V),
-define a 2-NIC VM, and the agent self-registers with the Huginn
-platform using the **host machine's** primary NIC MAC.
+Debian 12 raw QEMU disk image — a remote network scanner endpoint for the Huginn platform.
 
 ## Download
 
-Pre-built images are available on the
-[Releases](https://github.com/Optaro/vm-endpoint/releases) page.
+**Latest image:** [huginn-vm-endpoint.raw.xz](https://github.com/Optaro/vm-endpoint/releases/latest/download/huginn-vm-endpoint.raw.xz)
+
+Checksum: [huginn-vm-endpoint.raw.xz.sha256](https://github.com/Optaro/vm-endpoint/releases/latest/download/huginn-vm-endpoint.raw.xz.sha256)
+
+All releases: [Releases](https://github.com/Optaro/vm-endpoint/releases)
 
 ## Requirements
 
-- Any QEMU/KVM-compatible hypervisor
+- Any QEMU/KVM-compatible hypervisor (ESXi, Proxmox, libvirt, Hyper-V)
 - 512 MB RAM, 2 vCPUs, ~3 GB disk
 - Two NICs: one WAN (NAT/DHCP), one 802.1Q trunk
 
-## Installing on a hypervisor
-
-### Quick start (libvirt)
+## Quick start
 
 ```sh
-# Download and decompress
-xz -dc huginn-vm-endpoint-<version>.raw.xz > /var/lib/libvirt/images/huginn-vm-endpoint.raw
+# Download and verify
+curl -fLO https://github.com/Optaro/vm-endpoint/releases/latest/download/huginn-vm-endpoint.raw.xz
+curl -fLO https://github.com/Optaro/vm-endpoint/releases/latest/download/huginn-vm-endpoint.raw.xz.sha256
+sha256sum -c huginn-vm-endpoint.raw.xz.sha256
 
-# Define, autostart, and launch
-virsh define   /etc/libvirt/qemu/huginn-vm-endpoint.xml
-virsh autostart huginn-vm-endpoint
-virsh start    huginn-vm-endpoint
+# Decompress
+xz -d huginn-vm-endpoint.raw.xz
 ```
 
-### VM definition
+## VM configuration
+
+Create a VM with two NICs and inject the host MAC via SMBIOS:
 
 ```xml
 <domain type='kvm'>
@@ -53,12 +53,10 @@ virsh start    huginn-vm-endpoint
       <source file='/var/lib/libvirt/images/huginn-vm-endpoint.raw'/>
       <target dev='vda' bus='virtio'/>
     </disk>
-    <!-- WAN via libvirt's default NAT network -->
     <interface type='network'>
       <source network='default'/>
       <model type='virtio'/>
     </interface>
-    <!-- Trunk: macvtap-bridge directly onto the trunk NIC -->
     <interface type='direct'>
       <source dev='eth1' mode='bridge'/>
       <model type='virtio'/>
@@ -67,43 +65,14 @@ virsh start    huginn-vm-endpoint
 </domain>
 ```
 
-Replace `AA:BB:CC:DD:EE:FF` with the **hypervisor host's** primary NIC
-MAC (not the VM's virtual NIC). This must match the MAC entered in the
-Huginn admin UI when provisioning the scanner.
+- Replace `AA:BB:CC:DD:EE:FF` with the **hypervisor host's** primary NIC MAC (must match what's entered in the Huginn admin UI)
+- Replace `eth1` with the host NIC carrying the 802.1Q trunk (`ip -br link` to identify)
 
-Replace `eth1` with the host NIC carrying the switch's 802.1Q trunk
-(`ip -br link` to identify it).
-
-### Why SMBIOS for the host MAC
-
-libvirt's `<cmdline>` only works with direct-kernel boot. Since this is
-a regular disk image booting via GRUB, the host MAC is injected via
-SMBIOS serial instead. The in-VM agent reads it from
-`/sys/class/dmi/id/product_serial`.
-
-### API endpoint
+## API endpoint
 
 The agent defaults to `https://sensor.optaro.io`. Override via:
 - Environment variable: `HUGINN_VM_ENDPOINT_API_URL`
 - Kernel cmdline: `huginn.api_url=https://your-server.example.com`
-
-## Building from source
-
-Requires a Linux host with `libguestfs-tools` and `systemd-container`:
-
-```sh
-sudo apt install -y libguestfs-tools systemd-container xz-utils curl
-bash build.sh 0.2.0
-```
-
-Output: `output/huginn-vm-endpoint-0.2.0.raw.xz` (+ `.sha256`).
-
-## Status from inside the VM
-
-```
-journalctl -u huginn-vm-endpoint -f
-curl http://127.0.0.1:8645/status
-```
 
 ## License
 
