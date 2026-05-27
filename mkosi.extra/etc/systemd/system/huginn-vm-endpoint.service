@@ -1,0 +1,28 @@
+[Unit]
+Description=Huginn VM Image agent
+Documentation=https://github.com/dr12hes/huginn
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/lib/huginn-vm-endpoint/venv/bin/python -m agent
+Restart=on-failure
+RestartSec=10
+WorkingDirectory=/usr/local/lib/huginn-vm-endpoint
+Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/usr/local/lib/huginn-vm-endpoint
+StateDirectory=huginn-vm-endpoint
+ConfigurationDirectory=huginn-vm-endpoint
+# We touch wg/ip/bridge — needs CAP_NET_ADMIN. Run as root, drop nothing
+# else; AmbientCapabilities + privatised /home keep the blast radius small.
+User=root
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/huginn-vm-endpoint /etc/wireguard /etc/huginn-vm-endpoint
+NoNewPrivileges=true
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

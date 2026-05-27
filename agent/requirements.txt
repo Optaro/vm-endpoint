@@ -1,0 +1,3 @@
+cryptography>=42,<46
+flask>=3,<4
+requests>=2.31,<3

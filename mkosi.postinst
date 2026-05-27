@@ -1,0 +1,31 @@
+#!/bin/bash
+# mkosi runs this inside the chroot after package installation. The agent
+# source has already been dropped into /usr/local/lib/huginn-vm-endpoint/ via
+# mkosi.extra/. We just enable services, lock root, and trim apt state.
+
+set -euo pipefail
+
+# Make sure the agent dir is sane (mkosi.extra preserves whatever owner the
+# host filesystem had; reset to root + executable for the directories).
+chown -R root:root /usr/local/lib/huginn-vm-endpoint
+find /usr/local/lib/huginn-vm-endpoint -type d -exec chmod 0755 {} +
+find /usr/local/lib/huginn-vm-endpoint -type f -exec chmod 0644 {} +
+
+# All deps come from Debian packages (python3-cryptography, python3-flask,
+# python3-requests). The systemd unit invokes /usr/local/lib/huginn-vm-endpoint/
+# venv/bin/python which we point at the system Python here. Operators can
+# swap in a real venv later if they want pip-installed deps.
+install -d -m 0755 /usr/local/lib/huginn-vm-endpoint/venv/bin
+ln -sf /usr/bin/python3 /usr/local/lib/huginn-vm-endpoint/venv/bin/python
+
+systemctl enable huginn-vm-endpoint.service
+systemctl enable systemd-networkd.service
+systemctl enable systemd-resolved.service
+
+# Lock root login (image is meant to be hands-off — console login is by
+# whatever the operator wires up, e.g. via cloud-init or a custom AAA layer).
+passwd -l root
+
+# Trim apt state to keep the image small.
+apt-get clean
+rm -rf /var/lib/apt/lists/*

@@ -1,0 +1,11 @@
+VM Image agent runtime configuration.
+
+The agent looks here for an optional fallback host MAC if the kernel cmdline
+and SMBIOS sources are unset:
+
+    /etc/huginn-vm-endpoint/host_mac     # one line, lowercase, e.g. aa:bb:cc:dd:ee:ff
+
+Persistent state (WG private key, etc.) lives in /var/lib/huginn-vm-endpoint/.
+
+Logs: `journalctl -u huginn-vm-endpoint -f`
+Status: `curl http://127.0.0.1:8645/status`
