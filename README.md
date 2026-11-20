@@ -1,3 +1,5 @@
+> **Moved:** this repository lives at https://git.optaro.io/optaro/vm-endpoint (`git@git.optaro.io:optaro/vm-endpoint.git`). GitHub is a read-only mirror; pushes there are refused.
+
 # Huginn VM Endpoint
 
 Debian 12 raw QEMU disk image — a remote network scanner endpoint for the Huginn platform.
